@@ -1,38 +1,85 @@
 package main
 
-type Message struct {
-	Header     Header
-	Question   Question
-	Answer     Answer
-	Authority  Authority
-	Additional Additional
+import (
+	"fmt"
+	"log"
+	"net"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
+)
+
+const (
+	PORT = 8888
+	IP   = "127.0.0.1"
+)
+
+var records = map[string]string{
+	"plswork.lol": "123.123.123.123",
 }
 
-func (m *Message) GetMessage() string {
-	return ""
+func main() {
+
+	laddr := net.UDPAddr{
+		IP:   net.ParseIP(IP),
+		Port: PORT,
+	}
+	u, err := net.ListenUDP("udp", &laddr)
+	if err != nil {
+		log.Printf("error while listening: %v", err)
+	}
+
+	log.Printf("Listening for DNS requests on %s:%d", IP, PORT)
+
+	for {
+		tmp := make([]byte, 1024)
+		_, clientAddr, err := u.ReadFrom(tmp)
+		if err != nil {
+			log.Printf("error reading request: %v", err)
+		}
+		packet := gopacket.NewPacket(tmp, layers.LayerTypeDNS, gopacket.Default)
+		dnsPacket := packet.Layer(layers.LayerTypeDNS)
+		tcp, ok := dnsPacket.(*layers.DNS)
+		if !ok {
+			log.Printf("unsupported type packet: %T", dnsPacket)
+		}
+		err = serveDNS(u, &clientAddr, tcp)
+		if err != nil {
+			log.Print(err)
+		}
+	}
 }
 
-type Header struct {
-	ID      uint16
-	QR      bool
-	OPCODE  uint8
-	AA      bool
-	TC      bool
-	RD      bool
-	RA      bool
-	RCODE   uint8
-	QDCOUNT uint16
-	ANCOUNT uint16
-	NSCOUNT uint16
-	ARCOUNT uint16
-}
+func serveDNS(u *net.UDPConn, clientAddr *net.Addr, request *layers.DNS) error {
+	var dnsAnswer layers.DNSResourceRecord
 
-type Question struct {
-	QNAME  []byte
-	QTYPE  uint16
-	QCLASS uint16
-}
+	reply := request
+	questionRecord := string(request.Questions[0].Name)
 
-type Answer struct{}
-type Authority struct{}
-type Additional struct{}
+	ip, ok := records[questionRecord]
+	if !ok {
+		return fmt.Errorf("no record found for %s", questionRecord)
+	}
+	log.Printf("Resolving %s to %s", questionRecord, ip)
+
+	dnsAnswer.Type = layers.DNSTypeA
+	dnsAnswer.IP = net.ParseIP(ip)
+	dnsAnswer.Name = []byte(questionRecord)
+	dnsAnswer.Class = layers.DNSClassIN
+
+	reply.QR = true
+	reply.ANCount = 1
+	reply.OpCode = layers.DNSOpCodeNotify
+	reply.AA = true
+	reply.Answers = append(reply.Answers, dnsAnswer)
+	reply.ResponseCode = layers.DNSResponseCodeNoErr
+
+	buf := gopacket.NewSerializeBuffer()
+	err := reply.SerializeTo(buf, gopacket.SerializeOptions{})
+	if err != nil {
+		return fmt.Errorf("error serializing reply: %v", err)
+	}
+
+	u.WriteTo(buf.Bytes(), *clientAddr)
+	return nil
+}
