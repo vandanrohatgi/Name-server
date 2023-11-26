@@ -10,16 +10,15 @@ import (
 )
 
 const (
-	PORT = 8888
-	IP   = "127.0.0.1"
+	PORT     = 8888
+	IP       = "127.0.0.1"
+	RICKROLL = "rickroll.it"
+    RESET  = "\033[0m"
+    RED    = "\033[31m"
 )
 
-var records = map[string]string{
-	"plswork.lol": "123.123.123.123",
-}
-
 func main() {
-
+	printASCII()
 	laddr := net.UDPAddr{
 		IP:   net.ParseIP(IP),
 		Port: PORT,
@@ -56,14 +55,10 @@ func serveDNS(u *net.UDPConn, clientAddr *net.Addr, request *layers.DNS) error {
 	reply := request
 	questionRecord := string(request.Questions[0].Name)
 
-	ip, ok := records[questionRecord]
-	if !ok {
-		return fmt.Errorf("no record found for %s", questionRecord)
-	}
-	log.Printf("Resolving %s to %s", questionRecord, ip)
+	log.Printf("Resolving %s to %s", questionRecord, RICKROLL)
 
 	dnsAnswer.Type = layers.DNSTypeA
-	dnsAnswer.IP = net.ParseIP(ip)
+	dnsAnswer.IP = net.ParseIP("127.0.0.1")
 	dnsAnswer.Name = []byte(questionRecord)
 	dnsAnswer.Class = layers.DNSClassIN
 
@@ -82,4 +77,20 @@ func serveDNS(u *net.UDPConn, clientAddr *net.Addr, request *layers.DNS) error {
 
 	u.WriteTo(buf.Bytes(), *clientAddr)
 	return nil
+}
+
+func printASCII() {
+	fmt.Println(RED+`
+
+ _______  _        _            _______  _______  _______  ______   _______      _        _______  _______  ______      _________ _______      _______  _        _______             _   
+(  ___  )( \      ( \          (  ____ )(  ___  )(  ___  )(  __  \ (  ____ \    ( \      (  ____ \(  ___  )(  __  \     \__   __/(  ___  )    (  ___  )( (    /|(  ____ \           ( \  
+| (   ) || (      | (          | (    )|| (   ) || (   ) || (  \  )| (    \/    | (      | (    \/| (   ) || (  \  )       ) (   | (   ) |    | (   ) ||  \  ( || (    \/     _      \ \ 
+| (___) || |      | |          | (____)|| |   | || (___) || |   ) || (_____     | |      | (__    | (___) || |   ) |       | |   | |   | |    | |   | ||   \ | || (__        (_)      ) )
+|  ___  || |      | |          |     __)| |   | ||  ___  || |   | |(_____  )    | |      |  __)   |  ___  || |   | |       | |   | |   | |    | |   | || (\ \) ||  __)                | |
+| (   ) || |      | |          | (\ (   | |   | || (   ) || |   ) |      ) |    | |      | (      | (   ) || |   ) |       | |   | |   | |    | |   | || | \   || (           _       ) )
+| )   ( || (____/\| (____/\    | ) \ \__| (___) || )   ( || (__/  )/\____) |    | (____/\| (____/\| )   ( || (__/  )       | |   | (___) |    | (___) || )  \  || (____/\    (_)_    / / 
+|/     \|(_______/(_______/    |/   \__/(_______)|/     \|(______/ \_______)    (_______/(_______/|/     \|(______/        )_(   (_______)    (_______)|/    )_)(_______/      ( )  (_/  
+                                                                                                                                                                               |/        
+
+`+RESET)
 }
