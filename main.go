@@ -69,7 +69,7 @@ func serveDNS(u *net.UDPConn, clientAddr *net.Addr, request *layers.DNS) error {
 
 	reply.QR = true
 	reply.ANCount = 1
-	reply.OpCode = layers.DNSOpCodeNotify
+	reply.OpCode = layers.DNSOpCodeQuery
 	reply.AA = true
 	reply.Answers = append(reply.Answers, dnsAnswer)
 	reply.ResponseCode = layers.DNSResponseCodeNoErr
