@@ -57,8 +57,8 @@ func serveDNS(u *net.UDPConn, clientAddr *net.Addr, request *layers.DNS) error {
 
 	log.Printf("Resolving %s to %s", questionRecord, RICKROLL)
 
-	dnsAnswer.Type = layers.DNSTypeA
-	dnsAnswer.IP = net.ParseIP("127.0.0.1")
+	dnsAnswer.Type = layers.DNSTypeCNAME
+	dnsAnswer.CNAME = []byte(RICKROLL)
 	dnsAnswer.Name = []byte(questionRecord)
 	dnsAnswer.Class = layers.DNSClassIN
 
