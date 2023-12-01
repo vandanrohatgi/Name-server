@@ -20,8 +20,6 @@ const (
 )
 
 func main() {
-	// print sick ASCII art
-	printASCII()
 
 	// Address of this DNS server
 	laddr := net.UDPAddr{
@@ -62,7 +60,7 @@ func main() {
 // either acts like any other DNS and replies with an IP or just returns a CNAME
 // to a rickroll.
 func serveDNS(u *net.UDPConn, clientAddr *net.Addr, request *layers.DNS) error {
-	var answer, responseType string
+	var answer string
 	var err error
 
 	reply := request
@@ -70,18 +68,18 @@ func serveDNS(u *net.UDPConn, clientAddr *net.Addr, request *layers.DNS) error {
 
 	log.Printf("Resolving %s", questionRecord)
 
+	// 1 in 10 chance to resolve a rickroll
 	if n := rand.Intn(10); n == 1 {
-		answer = RICKROLL
-		responseType = "CNAME"
-	} else {
-		answer, err = resolveHost(questionRecord)
-		responseType = "A"
-		if err != nil {
-			return err
-		}
+		questionRecord = RICKROLL
+		printASCII()
 	}
 
-	replyData, err := DNSreply(reply, answer, responseType, questionRecord)
+	answer, err = resolveHost(questionRecord)
+	if err != nil {
+		return err
+	}
+
+	replyData, err := DNSreply(reply, answer, questionRecord)
 	if err != nil {
 		return err
 	}
@@ -90,18 +88,11 @@ func serveDNS(u *net.UDPConn, clientAddr *net.Addr, request *layers.DNS) error {
 }
 
 // DNSreply returns the reply to the query with structured byte data.
-func DNSreply(reply *layers.DNS, response, responseType, question string) ([]byte, error) {
+func DNSreply(reply *layers.DNS, response, question string) ([]byte, error) {
 	var dnsAnswer layers.DNSResourceRecord
 
-	switch responseType {
-	case "A":
-		dnsAnswer.Type = layers.DNSTypeA
-		dnsAnswer.IP = net.ParseIP(response)
-	case "CNAME":
-		dnsAnswer.Type = layers.DNSTypeCNAME
-		dnsAnswer.CNAME = []byte(response)
-	}
-
+	dnsAnswer.Type = layers.DNSTypeA
+	dnsAnswer.IP = net.ParseIP(response)
 	dnsAnswer.Name = []byte(question)
 	dnsAnswer.Class = layers.DNSClassIN
 
@@ -127,7 +118,7 @@ func resolveHost(host string) (string, error) {
 	resolver := net.Resolver{}
 	ips, err := resolver.LookupHost(context.Background(), host)
 	if err != nil {
-		return "", fmt.Errorf("error resolving host: ", err)
+		return "", fmt.Errorf("error resolving host: %w", err)
 	}
 	return ips[0], nil
 }
