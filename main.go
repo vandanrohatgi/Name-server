@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net"
 
@@ -16,7 +17,17 @@ const (
 	RED      = "\033[31m"
 )
 
+var trap bool
+
 func main() {
+	flag.BoolVar(&trap, "trap", false, "set this flag to ruin someone's life")
+	flag.Parse()
+
+	if trap {
+		log.Println("Starting Clown DNS 🤡 ...")
+	} else {
+		log.Println("Starting DNS server...")
+	}
 
 	// Address of this DNS server
 	laddr := net.UDPAddr{

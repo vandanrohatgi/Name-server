@@ -24,9 +24,9 @@ func serveDNS(u *net.UDPConn, clientAddr *net.Addr, request *layers.DNS) error {
 	log.Printf("Resolving %s", questionRecord)
 
 	// 1 in 10 chance to resolve a rickroll
-	if n := rand.Intn(10); n == 1 {
+	if n := rand.Intn(10); n == 1 && trap { // if the dice rolls 1 and we're in trap mode
 		questionRecord = RICKROLL
-		printASCII()
+		printASCII() // dabbing on the haters
 	}
 
 	answer, err = resolveHost(questionRecord)
@@ -80,7 +80,7 @@ func resolveHost(host string) (string, error) {
 
 // sick ASCII
 func printASCII() {
-	fmt.Println(RED + `
+	log.Println(RED + `
 
  _______  _        _            _______  _______  _______  ______   _______      _        _______  _______  ______      _________ _______      _______ _________ _______  _       
 (  ___  )( \      ( \          (  ____ )(  ___  )(  ___  )(  __  \ (  ____ \    ( \      (  ____ \(  ___  )(  __  \     \__   __/(  ___  )    (  ____ )\__   __/(  ____ \| \    /\
