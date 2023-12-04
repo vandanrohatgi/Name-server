@@ -9,10 +9,10 @@ world.
 
 # Kudos
 
-https://medium.com/@openmohan/dns-basics-and-building-simple-dns-server-in-go-6cb8e1cfe461 (For the implmentation)
+Idea: https://codingchallenges.fyi/challenges/challenge-dns-resolver
 
-https://codingchallenges.fyi/challenges/challenge-dns-resolver (For the idea)
+Implementation: https://medium.com/@openmohan/dns-basics-and-building-simple-dns-server-in-go-6cb8e1cfe461
 
-https://github.com/google/gopacket (for the library)
+DNS packet parsing: https://github.com/google/gopacket
 
-https://tools.ietf.org/html/rfc1035
+Extra Reading: https://tools.ietf.org/html/rfc1035
